@@ -20,7 +20,7 @@ export function HostelCard({ id, name, area, universitySlug, hostelSlug, average
           {coverImage ? (
             <img src={coverImage} alt={name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-foreground/20 font-serif text-5xl font-bold group-hover:scale-105 transition-transform duration-500">
+            <div className="w-full h-full flex items-center justify-center text-foreground/20 font-serif text-4xl md:text-5xl font-bold group-hover:scale-105 transition-transform duration-500">
               {name.charAt(0)}
             </div>
           )}

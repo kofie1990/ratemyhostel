@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { X, Hotel } from 'lucide-react';
 import type { Hostel } from './AdminDashboard';
+import HostelImagePicker from './HostelImagePicker';
 
 const UNIVERSITIES = [
   { label: 'University of Ghana (UG)', slug: 'ug', areaHint: 'University of Ghana, Legon' },
   { label: 'KNUST', slug: 'knust', areaHint: 'KNUST, Kumasi' },
   { label: 'University of Cape Coast (UCC)', slug: 'ucc', areaHint: 'University of Cape Coast, Cape Coast' },
+  { label: 'Central University', slug: 'central', areaHint: 'Central University, Accra' },
   { label: 'Other', slug: 'other', areaHint: '' },
 ];
 
@@ -20,6 +22,9 @@ const DEFAULT_AMENITIES = [
   '🚿 En-suite Bathrooms',
   '🔐 CCTV Security',
   '🅿️ Parking',
+  '🛏️ Furnished',
+  '🔌 Free Electricity',
+  '❄️ Air Conditioning'
 ];
 
 function slugify(text: string) {
@@ -181,19 +186,10 @@ export default function HostelFormModal({ token, hostel, onSaved, onClose }: Pro
             </div>
 
             {/* Cover Image */}
-            <div>
-              <label className="block text-white/60 text-xs font-medium mb-1.5">Cover Image URL</label>
-              <input
-                type="url"
-                value={form.cover_image_url}
-                onChange={e => setForm(f => ({ ...f, cover_image_url: e.target.value }))}
-                placeholder="https://images.unsplash.com/…"
-                className="w-full bg-white/[0.05] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-white/30 outline-none focus:border-violet-500/50 transition-all"
-              />
-              {form.cover_image_url && (
-                <img src={form.cover_image_url} alt="preview" className="mt-2 h-24 w-full object-cover rounded-xl opacity-70" />
-              )}
-            </div>
+            <HostelImagePicker
+              value={form.cover_image_url}
+              onChange={url => setForm(f => ({ ...f, cover_image_url: url }))}
+            />
 
             {/* Description */}
             <div>
@@ -218,11 +214,10 @@ export default function HostelFormModal({ token, hostel, onSaved, onClose }: Pro
                       key={a}
                       type="button"
                       onClick={() => toggleAmenity(a)}
-                      className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
-                        active
-                          ? 'bg-violet-600/30 border-violet-500/50 text-violet-200'
-                          : 'bg-white/[0.04] border-white/10 text-white/50 hover:border-white/20'
-                      }`}
+                      className={`text-xs px-3 py-1.5 rounded-full border transition-all ${active
+                        ? 'bg-violet-600/30 border-violet-500/50 text-violet-200'
+                        : 'bg-white/[0.04] border-white/10 text-white/50 hover:border-white/20'
+                        }`}
                     >
                       {a}
                     </button>

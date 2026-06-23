@@ -22,3 +22,25 @@ export async function uploadRoomImage(file: File): Promise<{ url: string | null;
 
   return { url: publicUrl, error: null };
 }
+
+export async function uploadHostelImage(file: File): Promise<{ url: string | null; error: string | null }> {
+  const supabase = createClient();
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+  const filePath = `covers/${fileName}`;
+
+  const { error } = await supabase.storage.from('hostel-images').upload(filePath, file, {
+    cacheControl: '31536000',
+    upsert: false,
+  });
+
+  if (error) {
+    console.error('Hostel image upload error:', error);
+    return { url: null, error: error.message };
+  }
+
+  const { data: { publicUrl } } = supabase.storage.from('hostel-images').getPublicUrl(filePath);
+
+  return { url: publicUrl, error: null };
+}

@@ -86,6 +86,12 @@
   }
   html {
     @apply font-sans;
+    font-size: 87.5%; /* 14px base for mobile - makes all rem-based text responsive */
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 100%; /* 16px base for desktop */
+    }
   }
 }
 
@@ -96,4 +102,25 @@
   .glass-card {
     @apply bg-white/10 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
+  .skeleton {
+    @apply bg-foreground/[0.06] dark:bg-foreground/[0.08] rounded-2xl relative overflow-hidden;
+  }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255,255,255,0.04) 20%,
+      rgba(255,255,255,0.08) 50%,
+      rgba(255,255,255,0.04) 80%,
+      transparent 100%
+    );
+    animation: skeleton-shimmer 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }

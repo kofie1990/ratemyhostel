@@ -1,10 +1,30 @@
 "use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, Droplets, ShieldCheck, Wifi } from "lucide-react";
 import { DraggableCardStack } from "./DraggableCardStack";
 
-export function HeroSection() {
+interface HeroSectionProps {
+  userCount?: number;
+  avatars?: string[];
+  stackRooms?: any[];
+}
+
+export function HeroSection({ userCount = 0, avatars = [], stackRooms = [] }: HeroSectionProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/directory?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/directory');
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center pt-24 overflow-hidden">
       {/* Background Glow */}
@@ -53,17 +73,17 @@ export function HeroSection() {
           <p className="text-sm font-bold text-foreground">8.5/10</p>
         </div>
       </motion.div>
-      
+
       <div className="max-w-7xl mx-auto px-6 w-full grid lg:grid-cols-2 gap-16 lg:gap-8 items-center z-10 relative">
-        
+
         {/* Left Column: Typography & Search */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="flex flex-col gap-8 max-w-xl"
         >
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
@@ -73,47 +93,66 @@ export function HeroSection() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
             </span>
-            <span className="text-sm font-medium text-foreground/80">1,204 Students exploring right now</span>
+            <span className="text-sm font-medium text-foreground/80">{userCount.toLocaleString()} Students exploring right now</span>
           </motion.div>
 
-          <h1 className="text-[4.5rem] md:text-[6.5rem] lg:text-[7.5rem] font-serif leading-[0.95] tracking-tighter">
+          {/* <h1 className="text-[4.5rem] md:text-[6.5rem] lg:text-[7.5rem] font-serif leading-[0.95] tracking-tighter">
             Real ratings. <br/>
             <span className="text-foreground/40 italic">Better hostels.</span>
-          </h1>
-          
-          <motion.div 
+          </h1> */}
+
+          <motion.div
             whileTap={{ scale: 0.98 }}
             className="relative mt-4 group"
           >
             <div className="absolute -inset-1 bg-gradient-to-r from-white/20 to-white/0 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-            <div className="relative rounded-[2rem] glass p-2 flex items-center border border-foreground/10 bg-foreground/5 dark:bg-black/40">
+            <form
+              onSubmit={handleSearch}
+              className="relative rounded-[2rem] glass p-2 flex items-center border border-foreground/10 bg-foreground/5 dark:bg-black/40"
+            >
               <div className="pl-5 pr-3 text-foreground/50">
                 <Search className="w-6 h-6" />
               </div>
-              <input 
-                type="text" 
-                placeholder="Search Bani, Evandy..." 
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search Bani, Evandy..."
                 className="w-full bg-transparent border-none outline-none text-foreground placeholder:text-foreground/30 text-lg px-2 py-4 font-medium"
               />
-              <button className="bg-foreground text-background px-8 py-4 rounded-3xl font-bold hover:bg-white/90 transition-colors shadow-lg">
+              <button
+                type="submit"
+                className="bg-foreground text-background px-8 py-4 rounded-3xl font-bold hover:bg-foreground/90 transition-colors shadow-lg"
+              >
                 Explore
               </button>
-            </div>
+            </form>
           </motion.div>
 
           {/* Trust Indicators */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
             className="flex items-center gap-5 mt-6"
           >
             <div className="flex -space-x-4">
-              <img className="w-12 h-12 rounded-full border-2 border-background object-cover" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="Avatar" />
-              <img className="w-12 h-12 rounded-full border-2 border-background object-cover" src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=100" alt="Avatar" />
-              <img className="w-12 h-12 rounded-full border-2 border-background object-cover" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100" alt="Avatar" />
-              <div className="w-12 h-12 rounded-full border-2 border-background bg-white/10 backdrop-blur-md flex items-center justify-center text-xs font-bold">
-                +5k
+              {avatars.map((avatar, idx) => (
+                <img
+                  key={idx}
+                  className="w-12 h-12 rounded-full border-2 border-background object-cover bg-foreground/10"
+                  src={avatar}
+                  alt="Student Avatar"
+                />
+              ))}
+              {/* Fill remaining slots with placeholders if fewer than 3 avatars exist */}
+              {Array.from({ length: Math.max(0, 3 - avatars.length) }).map((_, idx) => (
+                <div key={`placeholder-${idx}`} className="w-12 h-12 rounded-full border-2 border-background bg-foreground/10 flex items-center justify-center">
+                  <span className="text-foreground/40 font-bold text-sm">U</span>
+                </div>
+              ))}
+              <div className="w-12 h-12 rounded-full border-2 border-background bg-foreground/5 backdrop-blur-md flex items-center justify-center text-xs font-bold text-foreground/80">
+                +{userCount > 3 ? (userCount - 3).toLocaleString() : 0}
               </div>
             </div>
             <div className="flex flex-col">
@@ -126,13 +165,13 @@ export function HeroSection() {
         </motion.div>
 
         {/* Right Column: Interactive Showcase */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
           className="relative w-full flex items-center justify-center lg:justify-end py-12"
         >
-          <DraggableCardStack />
+          <DraggableCardStack rooms={stackRooms} />
         </motion.div>
       </div>
     </section>

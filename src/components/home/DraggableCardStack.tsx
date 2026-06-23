@@ -1,32 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Star } from "lucide-react";
 
-const CARDS = [
-  {
-    id: 1,
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&q=80&w=800",
-    vibeScore: 9.5,
-    hostel: "Bani Hostel, Block C",
-  },
-  {
-    id: 2,
-    image: "https://images.unsplash.com/photo-1522771731470-8ee116315ee4?auto=format&fit=crop&q=80&w=800",
-    vibeScore: 8.8,
-    hostel: "Evandy Hostel, Block A",
-  },
-  {
-    id: 3,
-    image: "https://images.unsplash.com/photo-1505693314120-0d443867891c?auto=format&fit=crop&q=80&w=800",
-    vibeScore: 9.2,
-    hostel: "Pentagon, Block B",
-  },
-];
+interface DraggableCardStackProps {
+  rooms?: any[];
+}
 
-export function DraggableCardStack() {
-  const [cards, setCards] = useState(CARDS);
+export function DraggableCardStack({ rooms = [] }: DraggableCardStackProps) {
+  const [cards, setCards] = useState(rooms);
+
+  // Sync state with props if rooms change
+  useEffect(() => {
+    if (rooms.length > 0) setCards(rooms);
+  }, [rooms]);
 
   const handleDragEnd = (event: any, info: any) => {
     const swipeThreshold = 100;
@@ -80,7 +68,7 @@ export function DraggableCardStack() {
                 <div className="flex items-end justify-between">
                   <div className="text-white">
                     <p className="font-bold text-2xl mb-1">{card.hostel}</p>
-                    <p className="text-sm text-white/70 font-medium">Rate My Room</p>
+                    <p className="text-sm text-white/70 font-medium italic">All-Time Top Rated</p>
                   </div>
                   <div className="glass px-4 py-2 rounded-2xl flex items-center gap-2">
                     <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />

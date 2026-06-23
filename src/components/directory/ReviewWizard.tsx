@@ -7,6 +7,7 @@ import { uploadRoomImage } from "@/utils/supabase/storage";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
+import { revalidateDirectory, revalidateFeed } from "@/app/actions/revalidate";
 
 interface ReviewWizardProps {
   hostelId: string;
@@ -207,6 +208,10 @@ export function ReviewWizard({ hostelId, hostelName, isOpen, onClose }: ReviewWi
         origin: { y: 0.6 },
         colors: ['#FFE400', '#FFBD00', '#E89400', '#FFCA28', '#FFECB3']
       });
+
+      // Bust the server cache
+      revalidateDirectory();
+      if (file) revalidateFeed(); // Room photo was uploaded too
 
       setTimeout(() => {
         onClose();

@@ -1,4 +1,5 @@
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
+import { MagicLinkForm } from "@/components/auth/MagicLinkForm";
 
 export default function LoginPage() {
   return (
@@ -8,10 +9,18 @@ export default function LoginPage() {
       
       <div className="w-full max-w-md glass-card rounded-[2rem] p-8 md:p-12 relative z-10">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-serif font-bold mb-2">Welcome Back.</h1>
+          <h1 className="text-3xl md:text-4xl font-serif font-bold mb-2">Welcome Back.</h1>
           <p className="text-foreground/60">
             Sign in to rate rooms, leave reviews, and save your favourite hostels.
           </p>
+        </div>
+
+        <MagicLinkForm />
+        
+        <div className="flex items-center gap-4 my-6">
+          <div className="h-px bg-foreground/10 flex-1"></div>
+          <span className="text-xs font-medium text-foreground/40 uppercase tracking-widest">or continue with</span>
+          <div className="h-px bg-foreground/10 flex-1"></div>
         </div>
 
         <SocialAuthButtons />

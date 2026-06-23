@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, LogOut, Hotel, Star, Trash2, Pencil, RefreshCw, Search } from 'lucide-react';
+import { Plus, LogOut, Hotel, Star, Trash2, Pencil, RefreshCw, Search, Inbox } from 'lucide-react';
 import HostelFormModal from './HostelFormModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import HostelRequestsTab from './HostelRequestsTab';
 
 export interface Hostel {
   id: string;
@@ -28,6 +29,8 @@ export default function AdminDashboard({ token, onLogout }: Props) {
   const [hostels, setHostels] = useState<Hostel[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState<'hostels' | 'requests'>('hostels');
+  const [pendingCount, setPendingCount] = useState(0);
   const [formModal, setFormModal] = useState<{ open: boolean; hostel?: Hostel }>({ open: false });
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; hostel?: Hostel }>({ open: false });
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -49,7 +52,17 @@ export default function AdminDashboard({ token, onLogout }: Props) {
     setLoading(false);
   }, [token]);
 
-  useEffect(() => { fetchHostels(); }, [fetchHostels]);
+  const fetchPendingCount = useCallback(async () => {
+    const res = await fetch('/api/admin/requests', {
+      headers: { 'x-admin-token': token },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPendingCount(data.requests?.length ?? 0);
+    }
+  }, [token]);
+
+  useEffect(() => { fetchHostels(); fetchPendingCount(); }, [fetchHostels, fetchPendingCount]);
 
   const filtered = hostels.filter(h =>
     h.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -74,6 +87,11 @@ export default function AdminDashboard({ token, onLogout }: Props) {
     ug: hostels.filter(h => h.university_slug === 'ug').length,
     knust: hostels.filter(h => h.university_slug === 'knust').length,
     ucc: hostels.filter(h => h.university_slug === 'ucc').length,
+  };
+
+  const handleRequestResolved = (msg: string) => {
+    fetchPendingCount();
+    showToast(msg);
   };
 
   return (
@@ -108,12 +126,12 @@ export default function AdminDashboard({ token, onLogout }: Props) {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-10">
         {/* Stats row */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           {[
-            { label: 'Total Hostels', value: stats.total, color: 'violet' },
-            { label: 'UG Legon', value: stats.ug, color: 'blue' },
-            { label: 'KNUST', value: stats.knust, color: 'emerald' },
-            { label: 'UCC', value: stats.ucc, color: 'amber' },
+            { label: 'Total Hostels', value: stats.total },
+            { label: 'UG Legon', value: stats.ug },
+            { label: 'KNUST', value: stats.knust },
+            { label: 'UCC', value: stats.ucc },
           ].map((s) => (
             <div key={s.label} className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
               <p className="text-white/40 text-xs font-medium mb-1">{s.label}</p>
@@ -122,6 +140,42 @@ export default function AdminDashboard({ token, onLogout }: Props) {
           ))}
         </div>
 
+        {/* Tabs */}
+        <div className="flex items-center gap-1 bg-white/[0.04] border border-white/[0.07] rounded-2xl p-1 w-fit mb-8">
+          <button
+            onClick={() => setActiveTab('hostels')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === 'hostels'
+                ? 'bg-white/[0.08] text-white'
+                : 'text-white/40 hover:text-white/70'
+            }`}
+          >
+            <Hotel className="w-4 h-4" />
+            Hostels
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === 'requests'
+                ? 'bg-white/[0.08] text-white'
+                : 'text-white/40 hover:text-white/70'
+            }`}
+          >
+            <Inbox className="w-4 h-4" />
+            Pending Requests
+            {pendingCount > 0 && (
+              <span className="bg-amber-500 text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                {pendingCount > 9 ? '9+' : pendingCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'requests' && (
+          <HostelRequestsTab token={token} onResolved={handleRequestResolved} />
+        )}
+
+        {activeTab === 'hostels' && (<>
         {/* Toolbar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
           <div className="relative w-full sm:w-72">
@@ -234,6 +288,7 @@ export default function AdminDashboard({ token, onLogout }: Props) {
         </div>
 
         <p className="text-white/20 text-xs mt-4 text-right">{filtered.length} of {hostels.length} hostels</p>
+        </>)}
       </main>
 
       {/* Modals */}

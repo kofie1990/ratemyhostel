@@ -2,10 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Star, BadgeCheck } from "lucide-react";
+import { X, Star, BadgeCheck, User } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { ProductTag } from "./ProductTag";
+import Link from "next/link";
 import { TagData } from "./RoomCard";
+import { BookmarkButton } from "../ui/BookmarkButton";
+import { useRouter } from "next/navigation";
+import { revalidateFeed } from "@/app/actions/revalidate";
 
 interface TheaterModeProps {
   room: {
@@ -14,22 +18,29 @@ interface TheaterModeProps {
     hostel: string;
     vibeScore: number;
     isVerified?: boolean;
+    creator?: {
+      username: string;
+      avatar_url: string | null;
+    };
     tags?: TagData[];
   };
   isOpen: boolean;
   onClose: () => void;
   userId?: string | null;
+  expandSide?: 'left' | 'right';
 }
 
-export function TheaterMode({ room, isOpen, onClose, userId }: TheaterModeProps) {
+export function TheaterMode({ room, isOpen, onClose, userId, expandSide = 'left' }: TheaterModeProps) {
   const supabase = createClient();
-  
+  const router = useRouter();
+
   const [sliderValue, setSliderValue] = useState(5.0);
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmittingVote, setIsSubmittingVote] = useState(false);
   const [displayScore, setDisplayScore] = useState(room.vibeScore || 0);
   const [showTags, setShowTags] = useState(false);
   const [existingVote, setExistingVote] = useState<number | null>(null);
+  const [initialIsSaved, setInitialIsSaved] = useState<boolean | null>(null);
 
   // Check if user already voted on this room
   useEffect(() => {
@@ -46,6 +57,16 @@ export function TheaterMode({ room, isOpen, onClose, userId }: TheaterModeProps)
         setHasVoted(true);
         setShowTags(true);
       }
+
+      const { data: savedData } = await supabase
+        .from('favourites')
+        .select('id')
+        .eq('user_id', userId!)
+        .eq('item_type', 'room')
+        .eq('item_id', room.id)
+        .single();
+
+      setInitialIsSaved(!!savedData);
     }
     checkVote();
   }, [isOpen, userId, room.id]);
@@ -84,6 +105,10 @@ export function TheaterMode({ room, isOpen, onClose, userId }: TheaterModeProps)
       // Reveal tags after a brief delay
       setTimeout(() => setShowTags(true), 400);
 
+      // Bust the server cache and refresh
+      revalidateFeed();
+      router.refresh();
+
     } catch (err) {
       console.error("Vote failed:", err);
     } finally {
@@ -106,54 +131,59 @@ export function TheaterMode({ room, isOpen, onClose, userId }: TheaterModeProps)
     return '#fbbf24';
   };
 
-  // Swipe down to close
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.y > 100) {
-      onClose();
-    }
-  };
-
+  // We remove handleDragEnd because vertical dragging conflicts with vertical scrolling
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="fixed inset-0 z-50 flex justify-center overflow-y-auto">
         {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-black/90 backdrop-blur-2xl"
+          className="fixed inset-0 bg-black/90 backdrop-blur-xl"
         />
 
-        {/* Draggable Image Container */}
+        {/* Scrollable Container */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.85, y: 100 }}
+          initial={{ opacity: 0, y: 100 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 100 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.3}
-          onDragEnd={handleDragEnd}
-          className="relative z-10 w-full max-w-3xl mx-4 flex flex-col items-center"
+          className={`relative z-10 w-full max-w-2xl md:max-w-5xl my-auto md:my-auto flex flex-col bg-background md:rounded-[2rem] overflow-hidden shadow-2xl md:h-[85vh] ${
+            expandSide === 'right' ? 'md:flex-row-reverse' : 'md:flex-row'
+          }`}
         >
-          {/* Close button */}
+          {/* Floating Actions on Image (Mobile Only) */}
           <button
             onClick={onClose}
-            className="absolute -top-12 right-0 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-20"
+            className="absolute top-4 right-4 p-3 rounded-full bg-black/50 hover:bg-black/70 transition-colors z-20 backdrop-blur-md md:hidden"
           >
-            <X className="w-6 h-6 text-white" />
+            <X className="w-5 h-5 text-white" />
           </button>
 
-          {/* The Image */}
-          <div className="relative w-full rounded-[2rem] shadow-2xl">
+          {initialIsSaved !== null && (
+            <div className="absolute top-4 left-4 z-20 md:hidden">
+              <div className="bg-black/50 rounded-full backdrop-blur-md p-1">
+                <BookmarkButton
+                  itemId={String(room.id)}
+                  itemType="room"
+                  userId={userId}
+                  initialIsSaved={initialIsSaved}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* The Image (Full Resolution) */}
+          <div className="relative w-full md:w-1/2 bg-foreground/5 min-h-[50vh] md:min-h-0 md:h-full rounded-t-3xl md:rounded-none shrink-0 flex items-center justify-center overflow-hidden">
             <motion.img
               layoutId={`room-image-${room.id}`}
               src={room.image}
               alt={room.hostel}
-              className="w-full h-auto max-h-[70vh] object-contain rounded-[2rem]"
+              className="w-full h-auto md:h-full object-cover rounded-t-3xl md:rounded-none md:absolute md:inset-0"
             />
 
             {/* Tags — only visible after voting */}
@@ -169,126 +199,180 @@ export function TheaterMode({ room, isOpen, onClose, userId }: TheaterModeProps)
                 </motion.div>
               ))}
             </AnimatePresence>
+          </div>
 
-            {/* Hostel name overlay */}
-            <div className="absolute bottom-0 inset-x-0 p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-              <div className="flex items-end justify-between">
-                <div>
-                  <p className="font-bold text-white text-xl mb-1">{room.hostel}</p>
-                  <div className="flex items-center gap-2">
-                    {room.isVerified && <BadgeCheck className="w-4 h-4 text-blue-400 fill-blue-400/20" />}
-                    <p className={`text-sm font-medium ${room.isVerified ? 'text-blue-400' : 'text-white/60'}`}>
-                      {room.isVerified ? 'Verified Resident' : 'Room Resident'}
-                    </p>
-                  </div>
+          {/* Content Below Image (Pinterest Style) */}
+          <div className="p-6 md:p-8 flex flex-col gap-6 md:gap-8 bg-background md:w-1/2 md:overflow-y-auto md:h-full">
+
+            {/* Desktop Actions */}
+            <div className="hidden md:flex justify-between items-center w-full">
+              {initialIsSaved !== null ? (
+                <div className="bg-foreground/5 hover:bg-foreground/10 transition-colors rounded-full p-1 border border-border">
+                  <BookmarkButton
+                    itemId={String(room.id)}
+                    itemType="room"
+                    userId={userId}
+                    initialIsSaved={initialIsSaved}
+                  />
                 </div>
+              ) : <div />}
+              
+              <button
+                onClick={onClose}
+                className="p-3 rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors border border-border"
+              >
+                <X className="w-5 h-5 text-foreground" />
+              </button>
+            </div>
 
-                {/* Score display */}
+            {/* Header: Hostel & Creator */}
+            <div className="flex justify-between items-start gap-4">
+              <div className="flex flex-col gap-4">
+                <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground leading-tight">{room.hostel}</h2>
+
+                {room.creator && (
+                  <Link
+                    href={`/profile/${room.creator.username}`}
+                    onClick={onClose}
+                    className="flex items-center gap-3 group w-fit"
+                  >
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-foreground/10 border border-border">
+                      {room.creator.avatar_url ? (
+                        <img src={room.creator.avatar_url} alt={room.creator.username} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center font-bold text-lg text-foreground/60">
+                          {room.creator.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-base font-bold text-foreground group-hover:text-blue-500 transition-colors">
+                        @{room.creator.username}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {room.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-blue-500 fill-blue-500/20" />}
+                        <span className={`text-xs font-medium ${room.isVerified ? 'text-blue-500' : 'text-foreground/60'}`}>
+                          {room.isVerified ? 'Verified Student' : 'Room Resident'}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                )}
+              </div>
+
+              {/* Vibe Score Display */}
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest mb-1.5">Vibe Score</span>
                 <motion.div
-                  className="flex items-center gap-2 px-4 py-2 rounded-2xl"
-                  style={{ 
-                    backgroundColor: 'rgba(0,0,0,0.5)',
-                    backdropFilter: 'blur(20px)',
-                    boxShadow: `0 0 30px ${getGlowColor(displayScore)}`,
-                  }}
+                  className="glass px-4 py-2 rounded-2xl flex items-center gap-2 border border-border bg-foreground/5 shadow-inner"
                   animate={hasVoted ? { scale: [1, 1.15, 1] } : {}}
                   transition={{ duration: 0.5 }}
                 >
-                  <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                  <motion.span
-                    className="font-bold text-white text-lg tabular-nums"
-                    key={displayScore}
-                    initial={{ y: -10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                  >
+                  <Star className="w-5 h-5 md:w-6 md:h-6 fill-yellow-400 text-yellow-500" />
+                  <span className="text-2xl md:text-3xl font-bold font-serif text-foreground tabular-nums">
                     {displayScore > 0 ? displayScore.toFixed(1) : '—'}
-                  </motion.span>
+                  </span>
                 </motion.div>
               </div>
             </div>
-          </div>
 
-          {/* Voting Slider — shown only if user hasn't voted and is logged in */}
-          <AnimatePresence>
-            {!hasVoted && userId && (
-              <motion.div
-                initial={{ y: 40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 40, opacity: 0, scale: 0.9 }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="w-full max-w-lg mt-8 glass rounded-[2rem] p-8 border border-white/10"
-                style={{ boxShadow: `0 0 60px ${getGlowColor(sliderValue)}` }}
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <p className="text-white/60 font-bold text-sm uppercase tracking-widest">Rate this vibe</p>
-                  <motion.span
-                    className="text-4xl font-bold font-serif text-white tabular-nums"
-                    key={sliderValue.toFixed(1)}
-                    initial={{ scale: 1.3 }}
-                    animate={{ scale: 1 }}
-                    style={{ color: getGlowColorSolid(sliderValue) }}
-                  >
-                    {sliderValue.toFixed(1)}
-                  </motion.span>
-                </div>
+            <div className="w-full h-px bg-border/50" />
 
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="0.1"
-                  value={sliderValue}
-                  onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
-                  className="w-full h-3 rounded-full appearance-none cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to right, ${getGlowColorSolid(sliderValue)} 0%, ${getGlowColorSolid(sliderValue)} ${((sliderValue - 1) / 9) * 100}%, rgba(255,255,255,0.1) ${((sliderValue - 1) / 9) * 100}%, rgba(255,255,255,0.1) 100%)`,
-                  }}
-                />
-                <div className="flex justify-between text-xs font-bold text-white/20 mt-2 px-1">
-                  <span>1.0</span>
-                  <span>10.0</span>
-                </div>
-
-                <button
-                  onClick={handleVoteSubmit}
-                  disabled={isSubmittingVote}
-                  className="w-full mt-6 py-4 rounded-full font-bold text-lg transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: getGlowColorSolid(sliderValue),
-                    color: sliderValue > 5 ? '#000' : '#fff',
-                  }}
+            {/* Voting Section */}
+            <AnimatePresence mode="wait">
+              {!hasVoted && userId && (
+                <motion.div
+                  key="voting-slider"
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  exit={{ y: 20, opacity: 0, scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  className="w-full bg-foreground/5 rounded-[2rem] p-6 md:p-8 border border-border"
                 >
-                  {isSubmittingVote ? 'Casting...' : 'Cast Your Vote'}
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  <div className="flex items-center justify-between mb-6">
+                    <p className="text-foreground/60 font-bold text-sm uppercase tracking-widest">Rate this vibe</p>
+                    <motion.span
+                      className="text-4xl md:text-5xl font-bold font-serif tabular-nums"
+                      key={sliderValue.toFixed(1)}
+                      initial={{ scale: 1.3 }}
+                      animate={{ scale: 1 }}
+                      style={{ color: getGlowColorSolid(sliderValue) }}
+                    >
+                      {sliderValue.toFixed(1)}
+                    </motion.span>
+                  </div>
 
-          {/* Already voted state */}
-          {hasVoted && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mt-6 text-center"
-            >
-              <p className="text-white/40 font-bold text-sm uppercase tracking-widest">
-                {existingVote ? `You rated this ${existingVote.toFixed(1)}` : 'Vote cast!'} • Swipe down to close
-              </p>
-            </motion.div>
-          )}
+                  <div className="relative pt-4 pb-2">
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      step="0.1"
+                      value={sliderValue}
+                      onChange={(e) => handleSliderChange(parseFloat(e.target.value))}
+                      className="w-full h-3 rounded-full appearance-none cursor-pointer bg-foreground/10 relative z-10"
+                      style={{
+                        background: `linear-gradient(to right, ${getGlowColorSolid(sliderValue)} 0%, ${getGlowColorSolid(sliderValue)} ${((sliderValue - 1) / 9) * 100}%, transparent ${((sliderValue - 1) / 9) * 100}%, transparent 100%)`,
+                      }}
+                    />
+                  </div>
 
-          {/* Not logged in */}
-          {!userId && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 text-center"
-            >
-              <p className="text-white/40 font-bold text-sm">Log in to rate rooms and unlock tags</p>
-            </motion.div>
-          )}
+                  <div className="flex justify-between text-xs font-bold text-foreground/40 mt-1 px-1">
+                    <span>1.0</span>
+                    <span>10.0</span>
+                  </div>
 
+                  <button
+                    onClick={handleVoteSubmit}
+                    disabled={isSubmittingVote}
+                    className="w-full mt-8 py-4 rounded-full font-bold text-lg transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg"
+                    style={{
+                      backgroundColor: getGlowColorSolid(sliderValue),
+                      color: sliderValue > 5 ? '#000' : '#fff',
+                    }}
+                  >
+                    {isSubmittingVote ? 'Submitting...' : 'Submit Rating'}
+                  </button>
+                </motion.div>
+              )}
+
+              {/* Already voted state */}
+              {hasVoted && (
+                <motion.div
+                  key="voted-state"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-center py-6 bg-green-500/10 rounded-[2rem] border border-green-500/20 flex flex-col items-center gap-2"
+                >
+                  <BadgeCheck className="w-8 h-8 text-green-500 mb-2" />
+                  <p className="text-foreground font-bold text-lg">
+                    {existingVote ? `You rated this ${existingVote.toFixed(1)}` : 'Vote cast successfully!'}
+                  </p>
+                  <p className="text-foreground/60 text-sm">Tags are now unlocked on the image.</p>
+                </motion.div>
+              )}
+
+              {/* Not logged in */}
+              {!userId && (
+                <motion.div
+                  key="not-logged-in"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center py-8 bg-foreground/5 rounded-[2rem] border border-border"
+                >
+                  <p className="text-foreground/60 font-bold text-base mb-4">Log in to rate rooms and unlock tags</p>
+                  <Link
+                    href="/login"
+                    onClick={onClose}
+                    className="inline-block bg-foreground text-background px-8 py-3 rounded-full font-bold text-sm hover:scale-105 transition-transform"
+                  >
+                    Go to Login
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       </div>
     </AnimatePresence>

@@ -1,54 +1,34 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import { MapPin, Star } from "lucide-react";
+import { MapPin, Star, Share } from "lucide-react";
 import { MasonryGrid } from "@/components/feed/MasonryGrid";
 import { ReviewSection } from "@/components/directory/ReviewSection";
 import { HostelRadarChart } from "@/components/directory/HostelRadarChart";
+import { BookmarkButton } from "@/components/ui/BookmarkButton";
+import { getCachedHostelDetail } from "@/lib/queries";
 
 export async function generateMetadata({ params }: { params: Promise<{ university: string, slug: string }> }) {
-  const supabase = await createClient();
   const resolvedParams = await params;
-  const { data: hostel } = await supabase
-    .from('hostels')
-    .select('name')
-    .eq('university_slug', resolvedParams.university)
-    .eq('hostel_slug', resolvedParams.slug)
-    .single();
-  return { title: hostel ? `${hostel.name} | RateMyHostel` : 'Hostel Not Found' };
+  const result = await getCachedHostelDetail(resolvedParams.university, resolvedParams.slug);
+  return { title: result ? `${result.hostel.name} | RateMyHostel` : 'Hostel Not Found' };
 }
 
-export const dynamic = 'force-dynamic';
-
 export default async function HostelProfilePage({ params }: { params: Promise<{ university: string, slug: string }> }) {
-  const supabase = await createClient();
   const resolvedParams = await params;
   const { university, slug } = resolvedParams;
 
-  // Fetch hostel details
-  const { data: hostel } = await supabase
-    .from('hostels')
-    .select('*')
-    .eq('university_slug', university)
-    .eq('hostel_slug', slug)
-    .single();
+  // Cached query — 120s revalidation, tagged 'directory'
+  const result = await getCachedHostelDetail(university, slug);
 
-  if (!hostel) {
+  if (!result) {
     notFound();
   }
 
+  const { hostel, reviews: safeReviews, rooms } = result;
   const id = hostel.id;
-
-  // Fetch all reviews for this hostel
-  const { data: reviews } = await supabase
-    .from('reviews')
-    .select('*, profiles(display_name, is_verified_student)')
-    .eq('hostel_id', id)
-    .order('created_at', { ascending: false });
-
-  const safeReviews = reviews || [];
   const reviewCount = safeReviews.length;
 
-  const getAvg = (key: string) => reviewCount > 0 ? safeReviews.reduce((acc, curr) => acc + (curr[key] || 0), 0) / reviewCount : 0;
+  const getAvg = (key: string) => reviewCount > 0 ? safeReviews.reduce((acc: number, curr: any) => acc + (curr[key] || 0), 0) / reviewCount : 0;
 
   const averageRating = getAvg('rating');
   const radarData = [
@@ -60,39 +40,24 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
   ];
 
   const amenities = hostel.amenities || [];
-
-  // Fetch all published rooms for this hostel
-  const { data: rawRooms } = await supabase
-    .from('rooms')
-    .select(`
-      id,
-      image_url,
-      vibe_score,
-      room_tags ( id, x_pos, y_pos, label )
-    `)
-    .eq('hostel_id', id)
-    .eq('status', 'published')
-    .order('vibe_score', { ascending: false });
-
-  const rooms = (rawRooms || []).map((room: any) => ({
-    id: room.id,
-    image: room.image_url,
-    hostel: hostel.name,
-    vibeScore: room.vibe_score || 0,
-    tags: (room.room_tags || []).map((tag: any) => ({
-      id: tag.id,
-      x: tag.x_pos,
-      y: tag.y_pos,
-      label: tag.label
-    }))
-  }));
-
-  // Total Vibe Score is sum of all room vibes
   const totalVibeScore = rooms.reduce((acc: number, room: any) => acc + room.vibeScore, 0);
 
-  // Check user authentication
+  // Auth/saved state — NOT cached (per-request)
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const hasReviewed = user ? safeReviews.some(r => r.user_id === user.id) : false;
+  const hasReviewed = user ? safeReviews.some((r: any) => r.user_id === user.id) : false;
+
+  let initialIsSaved = false;
+  if (user) {
+    const { data: savedHostel } = await supabase
+      .from('favourites')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('item_type', 'hostel')
+      .eq('item_id', id)
+      .single();
+    if (savedHostel) initialIsSaved = true;
+  }
 
   return (
     <div className="min-h-screen bg-background pb-32">
@@ -102,17 +67,30 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
         {hostel.cover_image_url ? (
           <img src={hostel.cover_image_url} alt={hostel.name} className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-foreground/5 flex items-center justify-center font-serif text-8xl font-bold text-foreground/10">
+          <div className="w-full h-full bg-foreground/5 flex items-center justify-center font-serif text-6xl md:text-8xl font-bold text-foreground/10">
             {hostel.name.charAt(0)}
           </div>
         )}
 
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
 
+        {/* Top Right Actions */}
+        <div className="absolute top-24 md:top-32 right-4 md:right-12 z-20 flex items-center gap-3">
+          <button className="p-3 rounded-full glass border border-white/20 hover:bg-white/10 transition-colors shadow-lg z-20">
+            <Share className="w-5 h-5 md:w-6 md:h-6 text-white" />
+          </button>
+          <BookmarkButton 
+            itemId={id} 
+            itemType="hostel" 
+            userId={user?.id} 
+            initialIsSaved={initialIsSaved} 
+          />
+        </div>
+
         <div className="absolute bottom-0 left-0 w-full px-4 md:px-6 pb-12 pt-32">
           <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8 items-end justify-between">
             <div className="max-w-3xl">
-              <h1 className="text-5xl md:text-7xl font-serif font-bold text-foreground mb-4 leading-tight">{hostel.name}</h1>
+              <h1 className="text-4xl md:text-7xl font-serif font-bold text-foreground mb-4 leading-tight">{hostel.name}</h1>
               <div className="flex flex-wrap items-center gap-4">
                 <div className="glass px-4 py-2 rounded-full flex items-center gap-2 text-sm font-medium border border-border backdrop-blur-md">
                   <MapPin className="w-4 h-4" />
@@ -130,7 +108,7 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
             <div className="glass px-8 py-6 rounded-[2rem] flex items-center gap-6 shadow-2xl border border-border backdrop-blur-xl">
               <div className="flex flex-col items-end">
                 <span className="text-sm font-bold text-foreground/60 uppercase tracking-widest mb-1">Global Rating</span>
-                <span className="text-5xl font-bold font-serif">{averageRating > 0 ? averageRating.toFixed(1) : '-'} <span className="text-foreground/40 text-2xl">/ 5</span></span>
+                <span className="text-4xl md:text-5xl font-bold font-serif">{averageRating > 0 ? averageRating.toFixed(1) : '-'} <span className="text-foreground/40 text-xl md:text-2xl">/ 5</span></span>
               </div>
               <div className="w-px h-16 bg-border mx-2" />
               <div className="flex flex-col items-center">
@@ -147,7 +125,7 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
         {/* 2. The Utility Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
           <div>
-            <h2 className="text-3xl font-serif font-bold mb-8">Amenities & Features</h2>
+            <h2 className="text-2xl md:text-3xl font-serif font-bold mb-8">Amenities & Features</h2>
             <div className="flex flex-wrap gap-3">
               {amenities.length > 0 ? amenities.map((amenity: string, idx: number) => (
                 <div key={idx} className="glass px-6 py-4 rounded-2xl border border-border text-lg font-medium shadow-sm hover:shadow-md transition-shadow">
@@ -182,7 +160,7 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
         <div className="flex flex-col gap-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-border pb-6 gap-4">
             <div>
-              <h2 className="text-4xl font-serif font-bold mb-2">Inside {hostel.name}</h2>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold mb-2">Inside {hostel.name}</h2>
               <p className="text-foreground/60 text-lg">See actual student room setups and get inspired.</p>
             </div>
             <div className="glass px-6 py-2 rounded-full font-bold text-sm">
@@ -194,7 +172,7 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
             <MasonryGrid rooms={rooms} />
           ) : (
             <div className="glass-card rounded-[3rem] p-24 text-center border border-border border-dashed">
-              <h3 className="text-3xl font-serif font-bold mb-4">No rooms inside yet</h3>
+              <h3 className="text-2xl md:text-3xl font-serif font-bold mb-4">No rooms inside yet</h3>
               <p className="text-foreground/60 text-xl max-w-md mx-auto">Be the very first student to show off your room in {hostel.name}!</p>
             </div>
           )}

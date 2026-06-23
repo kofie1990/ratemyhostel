@@ -219,7 +219,7 @@ export function RoomUploadFlow() {
                 </div>
                 <div className="text-center">
                   <p className="text-2xl font-serif font-bold mb-2">Drop your photo</p>
-                  <p className="text-foreground/40 font-medium">JPEG, PNG, WEBP — Max 5MB</p>
+                  <p className="text-foreground/40 font-medium px-10">JPEG, PNG, WEBP — Max 5MB</p>
                 </div>
               </div>
             ) : (
@@ -357,7 +357,7 @@ export function RoomUploadFlow() {
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-serif font-bold">Set Your Vibe</h3>
                   <div
-                    className="text-4xl font-bold font-serif tabular-nums px-6 py-3 rounded-2xl"
+                    className="text-3xl md:text-4xl font-bold font-serif tabular-nums px-6 py-3 rounded-2xl"
                     style={{ boxShadow: `0 0 40px ${getSliderGlow(vibeScore)}` }}
                   >
                     {vibeScore.toFixed(1)}
@@ -518,7 +518,7 @@ export function RoomUploadFlow() {
                 </motion.div>
 
                 <div>
-                  <h2 className="text-4xl font-serif font-bold mb-3">Ready to drop?</h2>
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold mb-3">Ready to drop?</h2>
                   <p className="text-foreground/60 text-lg">Your room will appear on the global feed for the community to rate and explore.</p>
                 </div>
 
@@ -562,7 +562,7 @@ export function RoomUploadFlow() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <h2 className="text-4xl font-serif font-bold mb-2">Dropped. 🔥</h2>
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold mb-2">Dropped. 🔥</h2>
                   <p className="text-foreground/60 text-lg">Redirecting you to the feed...</p>
                 </motion.div>
               </motion.div>

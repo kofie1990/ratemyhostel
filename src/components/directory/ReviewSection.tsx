@@ -18,19 +18,19 @@ export function ReviewSection({ hostelId, hostelName, isLoggedIn, hasReviewed, r
 
   return (
     <div className="flex flex-col gap-12 w-full max-w-3xl mx-auto">
-      <ReviewWizard 
-        hostelId={hostelId} 
-        hostelName={hostelName} 
-        isOpen={isWizardOpen} 
-        onClose={() => setIsWizardOpen(false)} 
+      <ReviewWizard
+        hostelId={hostelId}
+        hostelName={hostelName}
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
       />
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-border pb-8">
         <div>
-          <h3 className="text-4xl font-serif font-bold mb-2">Resident Reviews</h3>
+          <h3 className="text-3xl md:text-4xl font-serif font-bold mb-2">Resident Reviews</h3>
           <p className="text-foreground/60 text-lg">Read verified experiences from actual students.</p>
         </div>
-        
+
         {!isLoggedIn ? (
           <Link href="/login" className="px-8 py-4 rounded-full bg-foreground text-background font-bold hover:scale-105 active:scale-95 transition-all shadow-xl whitespace-nowrap">
             Log In to Review
@@ -40,7 +40,7 @@ export function ReviewSection({ hostelId, hostelName, isLoggedIn, hasReviewed, r
             Review Published
           </div>
         ) : (
-          <button 
+          <button
             onClick={() => setIsWizardOpen(true)}
             className="px-8 py-4 rounded-full bg-foreground text-background font-bold hover:scale-105 active:scale-95 transition-all shadow-xl whitespace-nowrap"
           >
@@ -85,7 +85,7 @@ export function ReviewSection({ hostelId, hostelName, isLoggedIn, hasReviewed, r
                     </div>
                     <div className="glass px-4 py-2 rounded-2xl flex items-center gap-2">
                       <Star className="w-5 h-5 fill-yellow-500 text-yellow-500" />
-                      <span className="font-bold">{review.rating} / 5</span>
+                      <span className="font-bold">{review.rating}</span>
                     </div>
                   </div>
                   {review.comment && (

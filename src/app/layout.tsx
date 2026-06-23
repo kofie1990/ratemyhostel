@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/layout/Navbar";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { GoogleOAuthProvider } from "@/components/providers/GoogleProvider";
 
 const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -17,7 +18,7 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   title: "RateMyHostel",
-  description: "The premium directory and social platform for university students in Ghana.",
+  description: "See inside your hostel before you book. Real student reviews, utility ratings, and room setups for university students.",
 };
 
 export default function RootLayout({
@@ -32,10 +33,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
-        </ThemeProvider>
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <Navbar />
+            <main className="flex-1 flex flex-col">{children}</main>
+          </ThemeProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

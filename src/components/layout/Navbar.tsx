@@ -5,13 +5,27 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, User, Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { GlobalSearchModal } from "./GlobalSearchModal";
 
 import { createClient } from "@/utils/supabase/client";
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const supabase = createClient();
+
+  // Keyboard shortcut (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -42,12 +56,16 @@ export function Navbar() {
             RateMyHostel.
           </Link>
           <nav className="hidden md:flex gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
-            <Link href="/directory" className="hover:text-foreground/70 transition-colors">Directory</Link>
+            <Link href="/directory" className="hover:text-foreground/70 transition-colors">Hostel Directory</Link>
             <Link href="/feed" className="hover:text-foreground/70 transition-colors">Rate My Room</Link>
           </nav>
           <div className="flex items-center gap-2 md:gap-4 z-50 relative">
             {/* <ThemeToggle /> */}
-            <button className="p-2 rounded-full hover:bg-foreground/10 transition-colors hidden md:block">
+            <ThemeToggle />
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="p-2 rounded-full hover:bg-foreground/10 transition-colors hidden md:block"
+            >
               <Search className="w-5 h-5" />
             </button>
             <Link href={profileLink} className="p-2 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors hidden md:block">
@@ -73,20 +91,27 @@ export function Navbar() {
           >
             <Link
               href="/directory"
-              className="text-4xl font-light hover:text-foreground/70 transition-colors"
+              className="text-3xl font-light hover:text-foreground/70 transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Directory
+              Hostel Directory
             </Link>
             <Link
               href="/feed"
-              className="text-4xl font-light hover:text-foreground/70 transition-colors"
+              className="text-3xl font-light hover:text-foreground/70 transition-colors"
               onClick={() => setIsMobileMenuOpen(false)}
             >
               Rate My Room
             </Link>
             <div className="flex gap-4 mt-8">
-              <button className="p-4 rounded-full bg-white/10 hover:bg-foreground/20 transition-colors">
+              <ThemeToggle />
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setTimeout(() => setIsSearchOpen(true), 200);
+                }}
+                className="p-4 rounded-full bg-white/10 hover:bg-foreground/20 transition-colors"
+              >
                 <Search className="w-6 h-6" />
               </button>
               <Link href={profileLink} className="p-4 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
@@ -96,6 +121,11 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </>
   );
 }
