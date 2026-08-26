@@ -102,6 +102,13 @@
   .glass-card {
     @apply bg-white/10 dark:bg-black/40 backdrop-blur-2xl border border-white/20 dark:border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)];
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
   .skeleton {
     @apply bg-foreground/[0.06] dark:bg-foreground/[0.08] rounded-2xl relative overflow-hidden;
   }

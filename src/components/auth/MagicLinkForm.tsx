@@ -51,6 +51,9 @@ export function MagicLinkForm() {
           <p className="text-foreground/70 text-sm mt-2 max-w-xs mx-auto">
             We've sent a magic link to <span className="font-bold">{email}</span>. Click the link to instantly sign in.
           </p>
+          <p className="text-foreground/70 text-xs mt-4">
+            Can't find the link? Check your spam/junk folder, or
+          </p>
         </div>
         <button 
           onClick={() => setIsSent(false)}
@@ -71,7 +74,7 @@ export function MagicLinkForm() {
           </div>
           <input
             type="email"
-            placeholder="student@university.edu"
+            placeholder="user@gmail.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={isLoading}

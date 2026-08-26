@@ -1,5 +1,6 @@
 import { HostelCard } from "@/components/directory/HostelCard";
 import { SearchFilter } from "@/components/directory/SearchFilter";
+import Link from "next/link";
 import { getCachedDirectoryHostels } from "@/lib/queries";
 
 export const metadata = {
@@ -48,7 +49,13 @@ export default async function DirectoryPage({
         {processedHostels.length === 0 && (
           <div className="col-span-full py-24 text-center glass-card rounded-[2rem]">
             <h3 className="text-2xl font-bold mb-2">No hostels found.</h3>
-            <p className="text-foreground/60 font-medium">Try adjusting your search or filters.</p>
+            <p className="text-foreground/60 font-medium mb-6">Try adjusting your search or filters.</p>
+            <Link 
+              href="/request"
+              className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold bg-foreground/10 text-foreground hover:bg-foreground/20 transition-colors"
+            >
+              Can't find your hostel? Add it here
+            </Link>
           </div>
         )}
       </div>

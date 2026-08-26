@@ -137,15 +137,30 @@ export function GlobalSearchModal({ isOpen, onClose }: GlobalSearchModalProps) {
                     >
                       See all results for "{query}" &rarr;
                     </button>
+                    <div className="border-t border-foreground/10 px-6 py-4 flex justify-center bg-foreground/5">
+                      <Link 
+                        href="/request"
+                        onClick={onClose}
+                        className="inline-flex items-center justify-center px-6 py-2.5 rounded-full font-bold text-sm bg-background border border-foreground/10 text-foreground hover:bg-foreground/5 transition-colors"
+                      >
+                        Can't find your hostel? Add it here
+                      </Link>
+                    </div>
                   </div>
                 ) : (
-                  <div className="py-12 text-center">
+                  <div className="py-12 flex flex-col items-center text-center">
                     {isLoading ? (
                       <p className="text-foreground/60 font-medium">Searching...</p>
                     ) : (
                       <>
-                        <p className="text-foreground/80 font-bold text-lg">No results found.</p>
-                        <p className="text-foreground/50 text-sm mt-1">Try searching for a different hostel.</p>
+                        <p className="text-foreground/80 font-bold text-lg mb-4">No results found.</p>
+                        <Link 
+                          href="/request"
+                          onClick={onClose}
+                          className="inline-flex items-center justify-center px-6 py-3 rounded-full font-bold bg-foreground/10 text-foreground hover:bg-foreground/20 transition-colors"
+                        >
+                          Can't find your hostel? Add it here
+                        </Link>
                       </>
                     )}
                   </div>

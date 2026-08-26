@@ -19,12 +19,12 @@ export default async function FeedPage(props: { searchParams: Promise<{ [key: st
   return (
     <div className="min-h-screen pt-32 pb-24 px-4 md:px-6 max-w-7xl mx-auto">
       <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        {/* <div>
-          <h1 className="text-5xl md:text-6xl font-serif font-bold mb-4">Rate My Room.</h1>
-          <p className="text-lg text-foreground/60 font-medium max-w-xl">
+         <div>
+          <h1 className="text-5xl md:text-6xl font-serif font-bold mb-4">Rate A Room here.</h1>
+          {/* <p className="text-lg text-foreground/60 font-medium max-w-xl">
             Explore real room setups from students across Ghana. Discover inspiration, tag artisan products, and see how others transform their spaces.
-          </p>
-        </div> */}
+          </p> */}
+        </div>
 
         <div className="flex gap-4 overflow-x-auto pb-2 md:pb-0">
           <Link href="/feed?filter=trending" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'trending' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
