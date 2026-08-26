@@ -164,6 +164,20 @@ export function HeroSection({ userCount = 0, avatars = [], stackRooms = [] }: He
             </form>
           </motion.div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="mt-2 pl-4"
+          >
+            <p className="text-sm text-foreground/60 font-medium">
+              Want to show off your room?{" "}
+              <Link href="/feed" className="text-foreground font-bold hover:underline underline-offset-4 decoration-foreground/30 transition-all">
+                Share it here <ArrowRight className="inline-block w-3.5 h-3.5 -mt-0.5 ml-0.5" />
+              </Link>
+            </p>
+          </motion.div>
+
           {/* Trust Indicators */}
           <motion.div
             initial={{ opacity: 0 }}

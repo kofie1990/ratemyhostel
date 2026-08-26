@@ -3,6 +3,8 @@ import { createClient } from "@/utils/supabase/server";
 import { getCachedFeedRooms } from "@/lib/queries";
 import Link from "next/link";
 
+import { UploadModal } from "@/components/upload/UploadModal";
+
 export default async function FeedPage(props: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
   const searchParams = await props.searchParams;
   const filter = (searchParams.filter as string) || "trending";
@@ -26,16 +28,19 @@ export default async function FeedPage(props: { searchParams: Promise<{ [key: st
           </p> */}
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-2 md:pb-0">
-          <Link href="/feed?filter=trending" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'trending' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
-            Trending
-          </Link>
-          <Link href="/feed?filter=top-rated" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'top-rated' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
-            Top Rated
-          </Link>
-          <Link href="/feed?filter=newest" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'newest' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
-            Newest
-          </Link>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+          <div className="flex gap-4 overflow-x-auto pb-2 md:pb-0 w-full sm:w-auto">
+            <Link href="/feed?filter=trending" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'trending' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
+              Trending
+            </Link>
+            <Link href="/feed?filter=top-rated" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'top-rated' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
+              Top Rated
+            </Link>
+            <Link href="/feed?filter=newest" className={`px-6 py-2 rounded-full font-medium transition-colors shrink-0 ${filter === 'newest' ? 'bg-foreground text-background hover:bg-foreground/90' : 'glass hover:bg-white/10'}`}>
+              Newest
+            </Link>
+          </div>
+          <UploadModal />
         </div>
       </div>
 
