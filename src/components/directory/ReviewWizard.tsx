@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Star, Loader2, X, ChevronRight, ChevronLeft, CheckCircle2, Upload, Check, Camera } from "lucide-react";
+import { Star, Loader2, X, ChevronRight, ChevronLeft, CheckCircle2, Upload, Check, Camera, Copy, Share } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { uploadRoomImage } from "@/utils/supabase/storage";
 import { useRouter } from "next/navigation";
@@ -77,6 +77,36 @@ export function ReviewWizard({ hostelId, hostelName, isOpen, onClose }: ReviewWi
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasCopied, setHasCopied] = useState(false);
+
+  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/directory` : '';
+  const shareMessage = "Hey, I just rated my hostel! Rate your hostel here to help people find better hostels and maybe you can find your next hostel there too!!";
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(`${shareMessage}\n\n${shareUrl}`);
+      setHasCopied(true);
+      setTimeout(() => setHasCopied(false), 2000);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Rate My Hostel',
+          text: shareMessage,
+          url: shareUrl,
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      handleCopyLink();
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -214,10 +244,8 @@ export function ReviewWizard({ hostelId, hostelName, isOpen, onClose }: ReviewWi
       revalidateDirectory();
       if (file) revalidateFeed(); // Room photo was uploaded too
 
-      setTimeout(() => {
-        onClose();
-        router.refresh();
-      }, 2000);
+      setStep(5);
+      setIsSubmitting(false);
 
     } catch (err: any) {
       setError(err.message || "Failed to submit review.");
@@ -459,60 +487,120 @@ export function ReviewWizard({ hostelId, hostelName, isOpen, onClose }: ReviewWi
                 </div>
               </motion.div>
             )}
+
+            {/* Step 5: Success & Share */}
+            {step === 5 && (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center gap-6 py-8">
+                <div className="w-24 h-24 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mb-4">
+                  <CheckCircle2 className="w-12 h-12" />
+                </div>
+                <h3 className="text-3xl font-serif font-bold">Review Published!</h3>
+                <p className="text-foreground/60 text-lg max-w-sm">
+                  Thank you for helping others make better decisions.
+                </p>
+
+                <div className="bg-foreground/5 p-6 rounded-3xl w-full flex flex-col gap-4 mt-4">
+                  <p className="font-bold text-foreground/80">
+                    Invite your friends to rate their hostels too!
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full">
+                    <button 
+                      onClick={handleCopyLink}
+                      className="flex-1 px-4 py-3 bg-background border border-border rounded-xl font-bold hover:bg-foreground/5 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {hasCopied ? (
+                        <>
+                          <Check className="w-5 h-5 text-green-500" />
+                          <span className="text-green-500">Copied!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-5 h-5" />
+                          Copy Link
+                        </>
+                      )}
+                    </button>
+                    <button 
+                      onClick={handleShare}
+                      className="flex-1 px-4 py-3 bg-foreground text-background rounded-xl font-bold hover:scale-105 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                    >
+                      <Share className="w-5 h-5" />
+                      Share
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
 
           {/* Footer Controls */}
           <div className="p-8 bg-foreground/5 border-t border-border/50 flex items-center justify-between">
-            {/* Step indicator dots + labels */}
-            <div className="flex items-center gap-3">
-              {stepLabels.map((label, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <div className={`w-2.5 h-2.5 rounded-full transition-all ${i + 1 === step ? 'bg-foreground scale-125' : i + 1 < step ? 'bg-foreground/60' : 'bg-foreground/20'}`} />
-                  {i + 1 === step && <span className="text-xs font-bold text-foreground/60 uppercase tracking-wider hidden md:inline">{label}</span>}
+            {step < 5 ? (
+              <>
+                {/* Step indicator dots + labels */}
+                <div className="flex items-center gap-3">
+                  {stepLabels.map((label, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className={`w-2.5 h-2.5 rounded-full transition-all ${i + 1 === step ? 'bg-foreground scale-125' : i + 1 < step ? 'bg-foreground/60' : 'bg-foreground/20'}`} />
+                      {i + 1 === step && <span className="text-xs font-bold text-foreground/60 uppercase tracking-wider hidden md:inline">{label}</span>}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
 
-            <div className="flex gap-4">
-              {step > 1 && (
-                <button
-                  onClick={handleBack}
-                  disabled={isSubmitting}
-                  className="px-6 py-4 rounded-full font-bold bg-background border border-border hover:bg-foreground/5 transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                  Back
-                </button>
-              )}
-
-              {step < totalSteps ? (
-                <button
-                  onClick={handleNext}
-                  className="px-8 py-4 rounded-full font-bold bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2"
-                >
-                  {step === 3 && !file ? 'Skip' : 'Next'}
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="px-10 py-4 rounded-full font-bold bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3 disabled:opacity-50 disabled:hover:scale-100"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Publishing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5" />
-                      Publish Review
-                    </>
+                <div className="flex gap-4">
+                  {step > 1 && (
+                    <button
+                      onClick={handleBack}
+                      disabled={isSubmitting}
+                      className="px-6 py-4 rounded-full font-bold bg-background border border-border hover:bg-foreground/5 transition-colors disabled:opacity-50 flex items-center gap-2"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                      Back
+                    </button>
                   )}
+
+                  {step < totalSteps ? (
+                    <button
+                      onClick={handleNext}
+                      className="px-8 py-4 rounded-full font-bold bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2"
+                    >
+                      {step === 3 && !file ? 'Skip' : 'Next'}
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={isSubmitting}
+                      className="px-10 py-4 rounded-full font-bold bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3 disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Publishing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5" />
+                          Publish Review
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="w-full flex justify-end">
+                <button
+                  onClick={() => {
+                    onClose();
+                    router.refresh();
+                  }}
+                  className="px-10 py-4 rounded-full font-bold bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-xl"
+                >
+                  Done
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
         </motion.div>
