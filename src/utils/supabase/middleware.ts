@@ -35,14 +35,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith("/settings")
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  const protectedRoutes = [
+    { path: "/request", reason: "request_hostel" },
+    { path: "/submit-room", reason: "rate_room" },
+    { path: "/profile", reason: "profile" }
+  ];
+
+  if (!user) {
+    const matchedRoute = protectedRoutes.find(r => request.nextUrl.pathname.startsWith(r.path));
+    if (matchedRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("reason", matchedRoute.reason);
+      url.searchParams.set("next", request.nextUrl.pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

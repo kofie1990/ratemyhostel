@@ -16,6 +16,8 @@ interface TheaterModeProps {
     id: string | number;
     image: string;
     hostel: string;
+    universitySlug?: string;
+    hostelSlug?: string;
     vibeScore: number;
     isVerified?: boolean;
     creator?: {
@@ -131,6 +133,11 @@ export function TheaterMode({ room, isOpen, onClose, userId, expandSide = 'left'
     return '#fbbf24';
   };
 
+  const formatUniversity = (slug?: string) => {
+    if (!slug) return '';
+    return slug.replace(/-/g, ' ').toUpperCase();
+  };
+
   // We remove handleDragEnd because vertical dragging conflicts with vertical scrolling
   if (!isOpen) return null;
 
@@ -228,7 +235,26 @@ export function TheaterMode({ room, isOpen, onClose, userId, expandSide = 'left'
             {/* Header: Hostel & Creator */}
             <div className="flex justify-between items-start gap-4">
               <div className="flex flex-col gap-4">
-                <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground leading-tight">{room.hostel}</h2>
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground leading-tight">
+                    {room.universitySlug && room.hostelSlug ? (
+                      <Link
+                        href={`/directory/${room.universitySlug}/${room.hostelSlug}`}
+                        onClick={onClose}
+                        className="hover:underline decoration-border underline-offset-4"
+                      >
+                        {room.hostel}
+                      </Link>
+                    ) : (
+                      room.hostel
+                    )}
+                  </h2>
+                  {room.universitySlug && (
+                    <p className="text-sm font-bold text-foreground/60 uppercase tracking-wider">
+                      {formatUniversity(room.universitySlug)}
+                    </p>
+                  )}
+                </div>
 
                 {room.creator && (
                   <Link

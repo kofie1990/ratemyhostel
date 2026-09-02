@@ -11,6 +11,7 @@ export function SearchFilter() {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
     if (e.target.value) {
       params.set('q', e.target.value);
     } else {
@@ -23,6 +24,7 @@ export function SearchFilter() {
 
   const setArea = (area: string) => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
     if (area === 'All') {
       params.delete('area');
     } else {

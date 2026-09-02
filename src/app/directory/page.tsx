@@ -11,14 +11,25 @@ export const metadata = {
 export default async function DirectoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; area?: string }>;
+  searchParams: Promise<{ q?: string; area?: string; page?: string }>;
 }) {
   const resolvedParams = await searchParams;
   const q = resolvedParams.q?.toLowerCase() || '';
   const area = resolvedParams.area || 'All';
+  const page = parseInt(resolvedParams.page || '1', 10);
+  const limit = 12;
 
   // Cached query — 120s revalidation, tagged 'directory'
-  const processedHostels = await getCachedDirectoryHostels(q, area);
+  const { hostels, totalCount } = await getCachedDirectoryHostels(q, area, page, limit);
+  const totalPages = Math.ceil(totalCount / limit);
+
+  const buildQueryString = (newPage: number) => {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (resolvedParams.area) params.set('area', resolvedParams.area);
+    if (newPage > 1) params.set('page', newPage.toString());
+    return params.toString();
+  };
 
   return (
     <div className="min-h-screen pt-32 pb-24 px-4 md:px-6 max-w-7xl mx-auto">
@@ -32,7 +43,7 @@ export default async function DirectoryPage({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {processedHostels.map((hostel: any) => (
+        {hostels.map((hostel: any) => (
           <HostelCard
             key={hostel.id}
             id={hostel.id}
@@ -46,7 +57,7 @@ export default async function DirectoryPage({
           />
         ))}
 
-        {processedHostels.length === 0 && (
+        {hostels.length === 0 && (
           <div className="col-span-full py-24 text-center glass-card rounded-[2rem]">
             <h3 className="text-2xl font-bold mb-2">No hostels found.</h3>
             <p className="text-foreground/60 font-medium mb-6">Try adjusting your search or filters.</p>
@@ -59,6 +70,36 @@ export default async function DirectoryPage({
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className="mt-12 flex justify-center items-center gap-4">
+          {page > 1 ? (
+            <Link
+              href={`/directory?${buildQueryString(page - 1)}`}
+              className="px-6 py-3 rounded-full font-medium glass hover:bg-foreground/5 transition-colors"
+            >
+              Previous
+            </Link>
+          ) : (
+            <span className="px-6 py-3 rounded-full font-medium glass opacity-50 cursor-not-allowed">Previous</span>
+          )}
+          
+          <span className="font-medium text-foreground/80">
+            Page {page} of {totalPages}
+          </span>
+          
+          {page < totalPages ? (
+            <Link
+              href={`/directory?${buildQueryString(page + 1)}`}
+              className="px-6 py-3 rounded-full font-medium glass hover:bg-foreground/5 transition-colors"
+            >
+              Next
+            </Link>
+          ) : (
+            <span className="px-6 py-3 rounded-full font-medium glass opacity-50 cursor-not-allowed">Next</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -40,7 +40,7 @@ export default async function FeedPage(props: { searchParams: Promise<{ [key: st
               Newest
             </Link>
           </div>
-          <UploadModal />
+          <UploadModal isLoggedIn={!!user} />
         </div>
       </div>
 

@@ -15,6 +15,8 @@ export interface RoomCardProps {
   id: string | number;
   image: string;
   hostel: string;
+  universitySlug?: string;
+  hostelSlug?: string;
   vibeScore: number;
   isVerified?: boolean;
   creator?: {

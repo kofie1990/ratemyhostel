@@ -5,6 +5,7 @@ import { MasonryGrid } from "@/components/feed/MasonryGrid";
 import { ReviewSection } from "@/components/directory/ReviewSection";
 import { HostelRadarChart } from "@/components/directory/HostelRadarChart";
 import { BookmarkButton } from "@/components/ui/BookmarkButton";
+import { LeaveRatingButton } from "@/components/directory/LeaveRatingButton";
 import { getCachedHostelDetail } from "@/lib/queries";
 
 export async function generateMetadata({ params }: { params: Promise<{ university: string, slug: string }> }) {
@@ -105,15 +106,25 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
               </div>
             </div>
 
-            <div className="glass px-8 py-6 rounded-[2rem] flex items-center gap-6 shadow-2xl border border-border backdrop-blur-xl">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-bold text-foreground/60 uppercase tracking-widest mb-1">Global Rating</span>
-                <span className="text-4xl md:text-5xl font-bold font-serif">{averageRating > 0 ? averageRating.toFixed(1) : '-'} <span className="text-foreground/40 text-xl md:text-2xl">/ 5</span></span>
+            <div className="glass px-4 md:px-8 py-4 md:py-6 rounded-[2rem] flex flex-row items-center gap-4 md:gap-6 shadow-2xl border border-border backdrop-blur-xl overflow-x-auto no-scrollbar">
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-xs md:text-sm font-bold text-foreground/60 uppercase tracking-widest mb-1">Global Rating</span>
+                <span className="text-3xl md:text-5xl font-bold font-serif">{averageRating > 0 ? averageRating.toFixed(1) : '-'} <span className="text-foreground/40 text-lg md:text-2xl">/ 5</span></span>
               </div>
-              <div className="w-px h-16 bg-border mx-2" />
-              <div className="flex flex-col items-center">
-                <Star className="w-10 h-10 fill-yellow-500 text-yellow-500 mb-2" />
-                <span className="text-sm font-bold text-foreground/60">{reviewCount} Reviews</span>
+              <div className="w-px h-12 md:h-16 bg-border shrink-0" />
+              <div className="flex flex-col items-center shrink-0">
+                <Star className="w-8 h-8 md:w-10 md:h-10 fill-yellow-500 text-yellow-500 mb-1 md:mb-2" />
+                <span className="text-xs md:text-sm font-bold text-foreground/60">{reviewCount} Reviews</span>
+              </div>
+              <div className="w-px h-12 md:h-16 bg-border shrink-0" />
+              <div className="shrink-0">
+                <LeaveRatingButton 
+                  hostelId={id}
+                  hostelName={hostel.name}
+                  isLoggedIn={!!user}
+                  hasReviewed={hasReviewed}
+                  className="px-4 py-2 md:px-6 md:py-3 rounded-full bg-foreground text-background text-sm md:text-base font-bold hover:scale-105 active:scale-95 transition-all shadow-xl whitespace-nowrap flex items-center justify-center gap-2"
+                />
               </div>
             </div>
           </div>
@@ -146,7 +157,7 @@ export default async function HostelProfilePage({ params }: { params: Promise<{ 
           </div>
         </div>
         {/* 4. The Written Reviews */}
-        <div className="pt-12 border-t border-border">
+        <div id="reviews" className="pt-12 border-t border-border scroll-mt-24">
           <ReviewSection
             hostelId={id}
             hostelName={hostel.name}

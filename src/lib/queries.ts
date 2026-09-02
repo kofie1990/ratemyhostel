@@ -16,7 +16,7 @@ export const getCachedFeedRooms = (filter: string) =>
           id,
           image_url,
           vibe_score,
-          hostels ( name ),
+          hostels ( name, university_slug, hostel_slug ),
           room_tags ( id, x_pos, y_pos, label ),
           profiles ( is_verified_student, username, avatar_url, is_public )
         `)
@@ -43,6 +43,14 @@ export const getCachedFeedRooms = (filter: string) =>
           (Array.isArray(room.hostels)
             ? room.hostels[0]?.name
             : room.hostels?.name) || "Unknown Hostel",
+        universitySlug:
+          Array.isArray(room.hostels)
+            ? room.hostels[0]?.university_slug
+            : room.hostels?.university_slug,
+        hostelSlug:
+          Array.isArray(room.hostels)
+            ? room.hostels[0]?.hostel_slug
+            : room.hostels?.hostel_slug,
         vibeScore: room.vibe_score || 0,
         isVerified: room.profiles?.is_verified_student || false,
         creator:
@@ -74,7 +82,7 @@ export const getCachedCuratedRooms = unstable_cache(
 
     const { data: rawCuratedRooms } = await supabase
       .from("rooms")
-      .select(`id, image_url, vibe_score, hostels ( name )`)
+      .select(`id, image_url, vibe_score, hostels ( name, university_slug, hostel_slug )`)
       .eq("status", "published")
       .order("vibe_score", { ascending: false })
       .limit(10);
@@ -86,6 +94,14 @@ export const getCachedCuratedRooms = unstable_cache(
         (Array.isArray(room.hostels)
           ? room.hostels[0]?.name
           : room.hostels?.name) || "Unknown Hostel",
+      universitySlug:
+        Array.isArray(room.hostels)
+          ? room.hostels[0]?.university_slug
+          : room.hostels?.university_slug,
+      hostelSlug:
+        Array.isArray(room.hostels)
+          ? room.hostels[0]?.hostel_slug
+          : room.hostels?.hostel_slug,
       vibeScore: room.vibe_score || 0,
       tags: [],
     }));
@@ -104,7 +120,7 @@ export const getCachedStackRooms = unstable_cache(
 
     const { data: rawStackRooms } = await supabase
       .from("rooms")
-      .select(`id, image_url, vibe_score, hostels ( name )`)
+      .select(`id, image_url, vibe_score, hostels ( name, university_slug, hostel_slug )`)
       .eq("status", "published")
       .order("vibe_score", { ascending: false })
       .limit(5);
@@ -116,6 +132,14 @@ export const getCachedStackRooms = unstable_cache(
         (Array.isArray(room.hostels)
           ? room.hostels[0]?.name
           : room.hostels?.name) || "Unknown Hostel",
+      universitySlug:
+        Array.isArray(room.hostels)
+          ? room.hostels[0]?.university_slug
+          : room.hostels?.university_slug,
+      hostelSlug:
+        Array.isArray(room.hostels)
+          ? room.hostels[0]?.hostel_slug
+          : room.hostels?.hostel_slug,
       vibeScore: room.vibe_score || 0,
     }));
   },
@@ -155,14 +179,14 @@ export const getCachedHomeStats = unstable_cache(
 // Directory: Hostel listing with search/filter
 // ─────────────────────────────────────────────
 
-export const getCachedDirectoryHostels = (q: string, area: string) =>
+export const getCachedDirectoryHostels = (q: string, area: string, page: number = 1, limit: number = 12) =>
   unstable_cache(
     async () => {
       const supabase = createAnonClient();
 
       let query = supabase
         .from("hostels")
-        .select("*, reviews(id, rating)")
+        .select("*, reviews(id, rating)", { count: "exact" })
         .order("name");
 
       if (q) {
@@ -175,9 +199,12 @@ export const getCachedDirectoryHostels = (q: string, area: string) =>
         if (area === "UCC") query = query.ilike("area", "%Cape Coast%");
       }
 
-      const { data: hostels } = await query;
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      
+      const { data: hostels, count } = await query.range(from, to);
 
-      return (hostels || []).map((h: any) => {
+      const processedHostels = (hostels || []).map((h: any) => {
         const reviews = h.reviews || [];
         const avg =
           reviews.length > 0
@@ -190,8 +217,10 @@ export const getCachedDirectoryHostels = (q: string, area: string) =>
           averageRating: avg,
         };
       });
+      
+      return { hostels: processedHostels, totalCount: count || 0 };
     },
-    ["directory", q || "__all__", area || "All"],
+    ["directory", q || "__all__", area || "All", String(page), String(limit)],
     { revalidate: 120, tags: ["directory"] }
   )();
 
@@ -233,6 +262,8 @@ export const getCachedHostelDetail = (university: string, slug: string) =>
         id: room.id,
         image: room.image_url,
         hostel: hostel.name,
+        universitySlug: university,
+        hostelSlug: slug,
         vibeScore: room.vibe_score || 0,
         tags: (room.room_tags || []).map((tag: any) => ({
           id: tag.id,
@@ -272,7 +303,7 @@ export const getCachedPublicProfile = (username: string) =>
           id,
           image_url,
           vibe_score,
-          hostels ( name ),
+          hostels ( name, university_slug, hostel_slug ),
           room_tags ( id, x_pos, y_pos, label )
         `)
         .eq("user_id", profile.id)
@@ -286,6 +317,14 @@ export const getCachedPublicProfile = (username: string) =>
           (Array.isArray(room.hostels)
             ? room.hostels[0]?.name
             : room.hostels?.name) || "Unknown Hostel",
+        universitySlug:
+          Array.isArray(room.hostels)
+            ? room.hostels[0]?.university_slug
+            : room.hostels?.university_slug,
+        hostelSlug:
+          Array.isArray(room.hostels)
+            ? room.hostels[0]?.hostel_slug
+            : room.hostels?.hostel_slug,
         vibeScore: room.vibe_score || 0,
         isVerified: profile.is_verified_student || false,
         creator: {

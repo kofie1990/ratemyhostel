@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { Star, BadgeCheck, User } from "lucide-react";
-import Link from "next/link";
-import { ReviewWizard } from "./ReviewWizard";
+import { LeaveRatingButton } from "./LeaveRatingButton";
 
 interface ReviewSectionProps {
   hostelId: string;
@@ -14,39 +12,21 @@ interface ReviewSectionProps {
 }
 
 export function ReviewSection({ hostelId, hostelName, isLoggedIn, hasReviewed, reviews }: ReviewSectionProps) {
-  const [isWizardOpen, setIsWizardOpen] = useState(false);
-
   return (
     <div className="flex flex-col gap-12 w-full max-w-3xl mx-auto">
-      <ReviewWizard
-        hostelId={hostelId}
-        hostelName={hostelName}
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-      />
-
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-border pb-8">
         <div>
           <h3 className="text-3xl md:text-4xl font-serif font-bold mb-2">Resident Reviews</h3>
           <p className="text-foreground/60 text-lg">Read verified experiences from actual students.</p>
         </div>
 
-        {!isLoggedIn ? (
-          <Link href="/login" className="px-8 py-4 rounded-full bg-foreground text-background font-bold hover:scale-105 active:scale-95 transition-all shadow-xl whitespace-nowrap">
-            Log In to Review
-          </Link>
-        ) : hasReviewed ? (
-          <div className="px-6 py-3 rounded-full bg-green-500/10 text-green-600 font-bold border border-green-500/20 whitespace-nowrap">
-            Review Published
-          </div>
-        ) : (
-          <button
-            onClick={() => setIsWizardOpen(true)}
-            className="px-8 py-4 rounded-full bg-foreground text-background font-bold hover:scale-105 active:scale-95 transition-all shadow-xl whitespace-nowrap"
-          >
-            Rate Your Experience
-          </button>
-        )}
+        <LeaveRatingButton 
+          hostelId={hostelId}
+          hostelName={hostelName}
+          isLoggedIn={isLoggedIn}
+          hasReviewed={hasReviewed}
+          className="px-8 py-4 rounded-full bg-foreground text-background font-bold hover:scale-105 active:scale-95 transition-all shadow-xl whitespace-nowrap flex items-center justify-center gap-2"
+        />
       </div>
 
       <div className="flex flex-col gap-6">

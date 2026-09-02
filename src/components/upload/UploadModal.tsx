@@ -5,13 +5,24 @@ import { RoomUploadFlow } from "./RoomUploadFlow";
 import { Plus, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export function UploadModal() {
+import { useRouter } from "next/navigation";
+
+export function UploadModal({ isLoggedIn }: { isLoggedIn?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+
+  const handleOpen = () => {
+    if (!isLoggedIn) {
+      router.push("/login?reason=rate_room&next=/feed");
+      return;
+    }
+    setIsOpen(true);
+  };
 
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="px-6 py-2 rounded-full font-bold bg-foreground text-background hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2 shrink-0"
       >
         <Plus className="w-5 h-5" />

@@ -4,12 +4,15 @@ import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Mail, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 export function MagicLinkForm() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const supabase = createClient();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
 
   const handleMagicLinkSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +28,7 @@ export function MagicLinkForm() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ''}`,
         },
       });
 

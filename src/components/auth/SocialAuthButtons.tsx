@@ -4,10 +4,14 @@ import { createClient } from "@/utils/supabase/client";
 import { useState } from "react";
 import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
 import { toast } from "sonner";
+import { useSearchParams } from "next/navigation";
 
 export function SocialAuthButtons() {
   const supabase = createClient();
   const [isLoading, setIsLoading] = useState(false);
+
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/feed";
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -25,10 +29,7 @@ export function SocialAuthButtons() {
       if (error) throw error;
       
       // Successfully signed in.
-      // Next.js router or window.location.href can be used here to redirect,
-      // but usually the auth state change listener in the app handles it.
-      // If we need an explicit redirect:
-      window.location.href = "/feed";
+      window.location.href = next;
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in with Google");
       setIsLoading(false);

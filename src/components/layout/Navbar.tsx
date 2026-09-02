@@ -58,6 +58,7 @@ export function Navbar() {
           <nav className="hidden md:flex gap-8 text-sm font-medium absolute left-1/2 -translate-x-1/2">
             <Link href="/directory" className="hover:text-foreground/70 transition-colors">Hostel Directory</Link>
             <Link href="/feed" className="hover:text-foreground/70 transition-colors">Rate My Room</Link>
+            <Link href="/request" className="hover:text-foreground/70 transition-colors">Add Hostel</Link>
           </nav>
           <div className="flex items-center gap-2 md:gap-4 z-50 relative">
             {/* <ThemeToggle /> */}
@@ -103,6 +104,20 @@ export function Navbar() {
             >
               Rate My Room
             </Link>
+            <Link
+              href="/request"
+              className="text-3xl font-light hover:text-foreground/70 transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Add Hostel
+            </Link>
+            <Link
+              href={profileLink}
+              className="text-3xl font-light hover:text-foreground/70 transition-colors"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              {user ? "Profile" : "Login"}
+            </Link>
             <div className="flex gap-4 mt-8">
               <ThemeToggle />
               <button
@@ -110,13 +125,10 @@ export function Navbar() {
                   setIsMobileMenuOpen(false);
                   setTimeout(() => setIsSearchOpen(true), 200);
                 }}
-                className="p-4 rounded-full bg-white/10 hover:bg-foreground/20 transition-colors"
+                className="p-4 rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors"
               >
                 <Search className="w-6 h-6" />
               </button>
-              <Link href={profileLink} className="p-4 rounded-full bg-foreground text-background hover:bg-foreground/90 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                <User className="w-6 h-6" />
-              </Link>
             </div>
           </motion.div>
         )}
