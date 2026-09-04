@@ -26,25 +26,23 @@ export function LeaveRatingButton({
 
   const pathname = usePathname();
 
+  let buttonContent = null;
+
   if (!isLoggedIn) {
-    return (
+    buttonContent = (
       <Link href={`/login?reason=rate_hostel&next=${encodeURIComponent(pathname)}`} className={className}>
         <Pencil className="w-4 h-4" />
         Log In to Rate
       </Link>
     );
-  }
-
-  if (hasReviewed) {
-    return (
+  } else if (hasReviewed && !isWizardOpen) {
+    buttonContent = (
       <div className={`px-6 py-3 rounded-full bg-green-500/10 text-green-600 font-bold border border-green-500/20 whitespace-nowrap flex items-center justify-center gap-2 ${className.includes("text-sm") ? "text-sm md:text-base" : ""}`}>
         Review Published
       </div>
     );
-  }
-
-  return (
-    <>
+  } else {
+    buttonContent = (
       <button
         onClick={() => setIsWizardOpen(true)}
         className={className}
@@ -52,13 +50,21 @@ export function LeaveRatingButton({
         <Pencil className="w-4 h-4" />
         Leave Rating
       </button>
+    );
+  }
+
+  return (
+    <>
+      {buttonContent}
       
-      <ReviewWizard
-        hostelId={hostelId}
-        hostelName={hostelName}
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-      />
+      {isLoggedIn && (
+        <ReviewWizard
+          hostelId={hostelId}
+          hostelName={hostelName}
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+        />
+      )}
     </>
   );
 }
